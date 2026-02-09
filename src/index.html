@@ -7,6 +7,16 @@
 
   <base href="/" />
 
+  <!-- Agregar Content Security Policy -->
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self' http://localhost:8100 ws://localhost:8100;
+    script-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:8100;
+    style-src 'self' 'unsafe-inline' http://localhost:8100;
+    connect-src 'self' http://localhost:8100 ws://localhost:8100 https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com;
+    img-src 'self' data: http://localhost:8100 https://*.googleapis.com;
+    font-src 'self' data: http://localhost:8100;
+  ">
+
   <meta name="color-scheme" content="light dark" />
   <meta name="viewport" content="viewport-fit=cover, width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="format-detection" content="telephone=no" />
@@ -14,8 +24,7 @@
 
   <link rel="icon" type="image/png" href="assets/icon/favicon.png" />
 
-  <!-- add to homescreen for ios -->
-  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black" />
 </head>
 
