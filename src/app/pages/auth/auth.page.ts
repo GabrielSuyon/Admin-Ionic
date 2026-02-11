@@ -1,18 +1,16 @@
 import { Component, OnInit, ChangeDetectorRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, Validators, FormControl, ReactiveFormsModule, FormGroup } from '@angular/forms';
-import { IonContent } from '@ionic/angular/standalone';
+import { IonContent, IonButton, IonIcon } from '@ionic/angular/standalone';
 import { HeaderComponent } from 'src/app/shared/components/header/header.component';
 import { CustomInputComponent } from 'src/app/shared/components/custom-input/custom-input.component';
-import { IonicModule } from '@ionic/angular';
 import { LogoComponent } from 'src/app/shared/components/logo/logo.component';
 import { logInOutline, personAddOutline } from 'ionicons/icons';
 import { addIcons } from 'ionicons';
 import { RouterModule } from '@angular/router';
 import { FirebaseService } from 'src/app/services/firebase';
 import { UtilsService } from 'src/app/services/utils';
-import {User} from 'src/app/models/user.model'
-
+import { User } from 'src/app/models/user.model';
 
 @Component({
   selector: 'app-auth',
@@ -22,12 +20,14 @@ import {User} from 'src/app/models/user.model'
   imports: [
     CommonModule,
     FormsModule,
+    ReactiveFormsModule,
+    RouterModule,
+    IonContent,
+    IonButton,
+    IonIcon,
     HeaderComponent,
     CustomInputComponent,
-    ReactiveFormsModule,
-    IonicModule,
-    LogoComponent,
-    RouterModule
+    LogoComponent
   ]
 })
 export class AuthPage implements OnInit {
@@ -62,9 +62,7 @@ export class AuthPage implements OnInit {
 
       this.firebaseSvc.signIn(this.form.value as User).then(res => {
 
-
-        this.getUserInfo(res.user.uid)
-
+        this.getUserInfo(res.user.uid);
 
       }).catch(error => {
         console.log(error);
@@ -72,7 +70,7 @@ export class AuthPage implements OnInit {
         this.utilsSvc.presentToast({
           message: error.message,
           duration: 2500,
-          color: 'primary',
+          color: 'danger',
           position: 'middle',
           icon: 'alert-circle-outline'
         })
@@ -83,55 +81,48 @@ export class AuthPage implements OnInit {
     }
   }
 
+  async getUserInfo(uid: string) {
+    
+    const loading = await this.utilsSvc.loading();
+    await loading.present();
 
+    let path = `users/${uid}`;
 
+    this.firebaseSvc.getDocument(path).then((snapshot) => {
 
+      // ✅ Extraer los datos del snapshot
+      if (snapshot && snapshot.exists) {
+        const user = snapshot.data() as User;
 
-   async getUserInfo(uid: string) {
-    if (this.form.valid) {
-
-      const loading = await this.utilsSvc.loading();
-      await loading.present();
-
-      let path = `users/${uid}`
-      delete this.form.value.password;
-
-      this.firebaseSvc.getDocument(path).then((user: User) => {
-
-
-        this.utilsSvc.saveInLocalStorage('user',user);
-        this.utilsSvc.routerLink('/home');
+        this.utilsSvc.saveInLocalStorage('user', user);
+        this.utilsSvc.routerLink('/main/home');
         this.form.reset();
-
 
         this.utilsSvc.presentToast({
           message: `Te damos la bienvenida ${user.name}`,
           duration: 1500,
-          color: 'primary',
+          color: 'success',
           position: 'middle',
-          icon: 'alert-circle-outline'
+          icon: 'person-circle-outline'
         })
 
-        /*await this.firebaseSvc.updateUser(this.form.value.name)
-        console.log(res);*/
+      } else {
+        throw new Error('Usuario no encontrado en la base de datos');
+      }
 
+    }).catch(error => {
+      console.log(error);
 
-
-
-      }).catch(error => {
-        console.log(error);
-
-        this.utilsSvc.presentToast({
-          message: error.message,
-          duration: 2500,
-          color: 'primary',
-          position: 'middle',
-          icon: 'alert-circle-outline'
-        })
-
-      }).finally(() => {
-        loading.dismiss();
+      this.utilsSvc.presentToast({
+        message: error.message || 'Error al obtener información del usuario',
+        duration: 2500,
+        color: 'danger',
+        position: 'middle',
+        icon: 'alert-circle-outline'
       })
-    }
+
+    }).finally(() => {
+      loading.dismiss();
+    })
   }
 }

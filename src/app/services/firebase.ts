@@ -1,27 +1,38 @@
 import { Injectable, inject } from '@angular/core';
 import { AngularFireAuth } from '@angular/fire/compat/auth';
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile} from 'firebase/auth'
-import {User} from '../models/user.model'
 import { AngularFirestore } from '@angular/fire/compat/firestore';
-import { getFirestore, setDoc, doc, getDoc } from '@angular/fire/firestore';
+import { User } from '../models/user.model';
+
 @Injectable({
   providedIn: 'root'
 })
 export class FirebaseService {
-  private auth = inject(AngularFireAuth);
-//============= Acceder
+  
+  auth = inject(AngularFireAuth);
+  firestore = inject(AngularFirestore);
+
+  //============= Autenticación =============//
+  
   signIn(user: User) {
     return this.auth.signInWithEmailAndPassword(user.email, user.password);
   }
 
-//================ Crear
   signUp(user: User) {
     return this.auth.createUserWithEmailAndPassword(user.email, user.password);
   }
 
-  updateUser(displayName: string){
-    return updateProfile(getAuth().currentUser, {displayName})
+  async updateUser(displayName: string) {
+    const user = await this.auth.currentUser;
+    if (user) {
+      return user.updateProfile({ displayName });
+    }
+    return Promise.reject('No user logged in');
   }
+
+  sendRecoveryEmail(email: string) {
+    return this.auth.sendPasswordResetEmail(email);
+  }
+
   signOut() {
     return this.auth.signOut();
   }
@@ -34,16 +45,29 @@ export class FirebaseService {
     return this.auth.authState;
   }
 
+  //============= Base de datos =============//
 
-  //=========== BASE DE DATOS ===========//
+  setDocument(path: string, data: any) {
+    return this.firestore.doc(path).set(data);
+  }
 
-    //== Setear un documento ====
-    setDocument(path: string, data: any){
-      return setDoc(doc(getFirestore(),path),data);
-    }
-    //== Setear un documento ====//
-    async getDocument(path: string){
-      return(await getDoc(doc(getFirestore(),path))).data();
-    }
+  getDocument(path: string) {
+    return this.firestore.doc(path).get().toPromise();
+  }
 
+  updateDocument(path: string, data: any) {
+    return this.firestore.doc(path).update(data);
+  }
+
+  deleteDocument(path: string) {
+    return this.firestore.doc(path).delete();
+  }
+
+  getCollection(path: string) {
+    return this.firestore.collection(path).valueChanges();
+  }
+
+  addToCollection(path: string, data: any) {
+    return this.firestore.collection(path).add(data);
+  }
 }
